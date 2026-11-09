@@ -19,13 +19,16 @@ You describe yourself once in `profile.md`. The bot does the scrolling.
 - Reposts are skipped, and posts that are too short are ignored.
 - If the post is just a photo with a short caption, the bot reads the image too (needs a model
   with vision support).
+- **No LLM? It still works.** With no `OPENROUTER_API_KEY`, or when the LLM call fails (no
+  balance, bad key, outage), a keyword matcher scores the post instead. See
+  [Keyword mode](#keyword-mode-no-llm).
 
 ## Requirements
 
 - Python 3.10+
 - A Telegram account that is a member of the job group
 - A Telegram API ID and hash (free, from https://my.telegram.org -> API development tools)
-- An OpenRouter API key (https://openrouter.ai/keys)
+- An OpenRouter API key (https://openrouter.ai/keys). Optional, see [Keyword mode](#keyword-mode-no-llm)
 
 ## Setup
 
@@ -53,6 +56,28 @@ Then:
 Matches arrive in your **Saved Messages**. For real push notifications, create a bot with
 [@BotFather](https://t.me/BotFather), press Start on it, and set `NOTIFY_BOT_TOKEN` and
 `NOTIFY_CHAT_ID` in `.env`.
+
+## Keyword mode (no LLM)
+
+Used when `OPENROUTER_API_KEY` is empty, and as an automatic fallback when the LLM call fails.
+If the key is rejected or out of balance (HTTP 401/402/403), the bot skips the LLM for 10
+minutes instead of failing on every post.
+
+Set `INCLUDE_KEYWORDS` (roles, stack, "remote") and `EXCLUDE_KEYWORDS` in `.env`. For each post:
+
+- It must look like an opening ("hiring", "lowongan", "loker", "dibutuhkan", requirements...).
+  Job seekers ("open to work") and closed openings ("position closed") are rejected.
+- Score: 1 include match = 70, 2 = 85, 3+ = 100. A job with no match scores 30.
+  Broad words like `software engineer` or `javascript` also match backend posts. Keep them
+  specific, add unwanted roles to `EXCLUDE_KEYWORDS`, or raise `MIN_SCORE` to 85 to need two matches.
+- Title, company and how to apply are pulled out with simple patterns (email, link, `@handle`).
+  They are best-effort. Company is often blank, and the "why" is just the matched words.
+- Photo posts are read with [Tesseract](https://github.com/tesseract-ocr/tesseract)
+  (`brew install tesseract tesseract-lang`, or `apt install tesseract-ocr tesseract-ocr-ind`).
+  Without it, photo-only posts are skipped in keyword mode.
+
+It is cruder than the LLM: no understanding of context like "no remote" or "juniors not
+welcome". Matches are tagged `[keyword mode]` so you can tell which scorer decided.
 
 ## Test that delivery works
 

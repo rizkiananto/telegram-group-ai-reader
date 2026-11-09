@@ -1,0 +1,42 @@
+# systemd unit for the Telegram job filter (Ubuntu).
+#
+# Before enabling it:
+#   1. Clone the repo on the server, create the venv and install requirements.
+#   2. Create .env and profile.md on the server (they are not in git).
+#   3. Run the bot once by hand to log in to Telegram (phone number + code):
+#        .venv/bin/python bot.py      then stop it with Ctrl+C
+#      The service cannot answer that prompt, so it must be done first.
+#   4. Replace YOUR_USER and the paths below. Use a normal user, not root.
+#
+# Install:
+#   sudo cp jobbot.service /etc/systemd/system/jobbot.service
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now jobbot
+#
+# Use:
+#   systemctl status jobbot
+#   journalctl -u jobbot -f          # live logs
+#   sudo systemctl restart jobbot    # after git pull or a .env / profile.md change
+
+[Unit]
+Description=Telegram job filter
+After=network-online.target
+Wants=network-online.target
+# If the bot keeps failing (for example, the login is invalid), stop retrying
+# after 5 attempts in 5 minutes instead of hammering Telegram.
+StartLimitIntervalSec=300
+StartLimitBurst=5
+
+[Service]
+Type=simple
+User=YOUR_USER
+WorkingDirectory=/home/YOUR_USER/auto-read-job-group
+ExecStart=/home/YOUR_USER/auto-read-job-group/.venv/bin/python bot.py
+Environment=PYTHONUNBUFFERED=1
+Restart=always
+RestartSec=10
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

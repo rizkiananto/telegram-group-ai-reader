@@ -1,0 +1,16 @@
+# Secrets and private data: never commit these
+.env
+*.session
+*.session-journal
+seen.db
+profile.md
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/

@@ -38,6 +38,8 @@ NOTIFY_CHAT_ID = os.getenv("NOTIFY_CHAT_ID", "").strip()  # optional
 TOPICS = [t.strip() for t in os.getenv("TG_TOPICS", "").split(",") if t.strip()]
 MIN_SCORE = int(os.getenv("MIN_SCORE", "70"))
 MIN_LEN = int(os.getenv("MIN_MESSAGE_LENGTH", "60"))
+# Posts containing any of these words (case-insensitive) are dropped before the LLM call
+EXCLUDE = [k.strip().lower() for k in os.getenv("EXCLUDE_KEYWORDS", "").split(",") if k.strip()]
 BACKFILL_HOURS = int(os.getenv("BACKFILL_HOURS", "12"))
 OPENROUTER_API_KEY = os.environ["OPENROUTER_API_KEY"]
 MODEL = os.getenv("LLM_MODEL", "anthropic/claude-haiku-5-5")  # any OpenRouter slug
@@ -232,8 +234,10 @@ async def notify(entity, msg, verdict: dict):
 
 
 async def process(entity, msg) -> str:
-    """Returns what happened: short | seen | failed | rejected | sent."""
+    """Returns what happened: excluded | short | seen | failed | rejected | sent."""
     text = (msg.raw_text or "").strip()
+    if EXCLUDE and any(k in text.lower() for k in EXCLUDE):
+        return "excluded"
     image_b64 = None
     if len(text) < MIN_LEN:
         # Short caption: the job may be in a photo. Only then pay for a vision call.

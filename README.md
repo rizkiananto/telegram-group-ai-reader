@@ -29,6 +29,7 @@ You describe yourself once in `profile.md`. The bot does the scrolling.
 - A Telegram account that is a member of the job group
 - A Telegram API ID and hash (free, from https://my.telegram.org -> API development tools)
 - An OpenRouter API key (https://openrouter.ai/keys). Optional, see [Keyword mode](#keyword-mode-no-llm)
+- Tesseract OCR. Optional, reads photo posts in keyword mode. See [Keyword mode](#keyword-mode-no-llm)
 
 ## Setup
 
